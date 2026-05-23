@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Сообщения @' + ${targetUser.login})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <a th:href="@{/users/{id}(id=${targetUser.id})}"
+               class="btn btn-outline-secondary btn-sm mb-3">← К профилю</a>
+
+            <h1 class="h4 mb-3">
+                Сообщения пользователя
+                <a th:href="@{/users/{id}(id=${targetUser.id})}"
+                   th:text="'@' + ${targetUser.login}"
+                   class="text-decoration-none"></a>
+            </h1>
+
+            <p th:if="${posts.totalElements == 0}" class="text-muted py-4 text-center">
+                У пользователя пока нет сообщений.
+            </p>
+
+            <div th:each="p : ${posts.content}" class="card mb-2 shadow-sm">
+                <div class="card-body py-2 px-3">
+                    <div class="small text-muted mb-1">
+                        в теме →
+                        <a th:href="@{/topics/{id}(id=${p.topicId})}"
+                           class="text-decoration-none">тема #<span th:text="${p.topicId}"></span></a>
+                        ·
+                        <span th:text="${#temporals.format(p.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                        ·
+                        <span class="text-muted">♥ <span th:text="${p.likeCount}">0</span></span>
+                    </div>
+                    <div th:if="${p.content != null and !#strings.isEmpty(p.content)}"
+                         class="mb-1" th:text="${p.content}"></div>
+                    <div th:if="${p.attachments != null and !p.attachments.isEmpty()}"
+                         class="small text-muted">📎 вложений: <span th:text="${#lists.size(p.attachments)}"></span></div>
+                </div>
+            </div>
+
+            <nav th:if="${posts.totalPages > 1}" aria-label="Пагинация" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <li th:each="i : ${#numbers.sequence(0, posts.totalPages - 1)}"
+                        class="page-item" th:classappend="${i == posts.number} ? 'active'">
+                        <a class="page-link"
+                           th:href="@{/users/{id}/posts(id=${targetUser.id}, page=${i})}"
+                           th:text="${i + 1}"></a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

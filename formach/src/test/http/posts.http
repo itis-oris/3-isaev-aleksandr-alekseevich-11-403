@@ -1,0 +1,55 @@
+@base = http://localhost:8080
+@topicId = 11
+@postId = 28
+
+### 1. Войти (получить JSESSIONID)
+# @no-redirect
+POST {{base}}/login
+Content-Type: application/x-www-form-urlencoded
+
+username=Veas1qq&password=Hepi_pro323
+
+### 2. Получить список постов темы
+GET {{base}}/api/posts/topic/{{topicId}}
+Accept: application/json
+
+### 3. Получить пост по ID
+GET {{base}}/api/posts/{{postId}}
+Accept: application/json
+
+### 4. Создать новый пост
+POST {{base}}/api/posts/topic/{{topicId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "content": "Тестовый пост через REST API",
+  "parentId": null
+}
+
+### 5. Создать вложенный ответ (ответ на пост)
+POST {{base}}/api/posts/topic/{{topicId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "content": "Вложенный ответ на пост",
+  "parentId": {{postId}}
+}
+
+### 6. Обновить пост
+PUT {{base}}/api/posts/{{postId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "content": "Обновлённый текст поста через REST API"
+}
+
+### 7. Поставить / убрать лайк
+POST {{base}}/api/posts/{{postId}}/like
+Accept: application/json
+
+### 8. Удалить пост
+DELETE {{base}}/api/posts/{{postId}}
+Accept: application/json

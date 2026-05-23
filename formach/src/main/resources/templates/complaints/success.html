@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Жалоба отправлена')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 text-center">
+            <div class="card shadow-sm p-4">
+                <h1 class="h4 mb-3">Жалоба отправлена</h1>
+                <p class="text-muted" th:text="${message}"></p>
+                <div class="d-flex gap-2 justify-content-center mt-3">
+                    <a th:href="@{/topics}" class="btn btn-primary">К темам</a>
+                    <a th:href="@{/home}" class="btn btn-outline-secondary">На главную</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

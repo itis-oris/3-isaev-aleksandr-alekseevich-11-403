@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Переписка')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a th:href="@{/messages}" class="btn btn-outline-secondary btn-sm">← Назад</a>
+                <h1 class="h4 mb-0">
+                    Переписка с
+                    <a th:href="@{/users/{id}(id=${companion.id})}"
+                       th:text="${companion.firstName + ' ' + companion.lastName}"
+                       class="text-decoration-none"></a>
+                </h1>
+            </div>
+
+            <div class="d-flex flex-column gap-2 mb-4" style="max-height:60vh;overflow-y:auto;" id="chat-box">
+                <div th:each="m : ${messages}"
+                     class="d-flex"
+                     th:classappend="${m.sender.id == currentUserId} ? 'justify-content-end' : 'justify-content-start'">
+                    <div class="card shadow-sm"
+                         style="max-width:75%;"
+                         th:classappend="${m.sender.id == currentUserId} ? 'bg-primary text-white' : ''">
+                        <div class="card-body py-2 px-3">
+                            <p class="mb-1 small" th:if="${m.content != null and !#strings.isEmpty(m.content)}"
+                               th:utext="${@textRenderer.render(m.content)}"></p>
+
+                            <div th:if="${m.attachments != null and !m.attachments.isEmpty()}"
+                                 class="d-flex flex-wrap gap-2 mb-1">
+                                <div th:each="a : ${m.attachments}"
+                                     th:with="ext=${#strings.toLowerCase(#strings.substringAfter(a.storedPath, '.'))}"
+                                     style="max-width:200px">
+                                    <a th:if="${ext == 'jpg' or ext == 'jpeg' or ext == 'png' or ext == 'webp' or ext == 'gif'}"
+                                       th:href="${a.storedPath}" target="_blank">
+                                        <img th:src="${a.storedPath}" th:alt="${a.originalName}"
+                                             style="max-width:200px;max-height:200px;border-radius:6px;">
+                                    </a>
+                                    <video th:if="${ext == 'mp4' or ext == 'webm' or ext == 'ogg' or ext == 'mov'}"
+                                           controls preload="metadata"
+                                           style="max-width:200px;max-height:200px;border-radius:6px;">
+                                        <source th:src="${a.storedPath}" th:type="${a.mimeType}">
+                                    </video>
+                                    <a th:unless="${ext == 'jpg' or ext == 'jpeg' or ext == 'png' or ext == 'webp' or ext == 'gif'
+                                                  or ext == 'mp4' or ext == 'webm' or ext == 'ogg' or ext == 'mov'}"
+                                       th:href="${a.storedPath}" target="_blank"
+                                       class="btn btn-sm"
+                                       th:classappend="${m.sender.id == currentUserId} ? 'btn-light' : 'btn-outline-secondary'"
+                                       th:text="'📎 ' + ${a.originalName}"></a>
+                                </div>
+                            </div>
+
+                            <small th:classappend="${m.sender.id == currentUserId} ? 'text-white-50' : 'text-muted'"
+                                   th:text="${#temporals.format(m.createdAt, 'dd.MM HH:mm')}"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form th:action="@{/messages/{id}(id=${companion.id})}"
+                          th:object="${sendRequest}" method="post" enctype="multipart/form-data">
+                        <div class="d-flex gap-2">
+                            <textarea class="form-control" th:field="*{content}" rows="2"
+                                      placeholder="Сообщение (необязательно, если есть файлы)..."
+                                      th:classappend="${#fields.hasErrors('content')} ? 'is-invalid'"
+                                      style="resize:none;"></textarea>
+                            <button type="submit" class="btn btn-primary align-self-end">
+                                Отправить
+                            </button>
+                        </div>
+                        <div class="invalid-feedback"
+                             th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+                        <div class="mt-2">
+                            <input type="file" class="form-control form-control-sm" multiple
+                                   name="attachments" accept="image/*,video/*,.pdf,.txt,.zip">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script>
+    const box = document.getElementById('chat-box');
+    if (box) box.scrollTop = box.scrollHeight;
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${pageTitle + ' — Formach'}">Formach</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+</head>
+
+<body>
+
+<nav th:fragment="header" class="navbar navbar-expand-lg navbar-dark bg-dark"
+     th:with="me=${currentUser}">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/home}">Formach</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+                aria-controls="navMenu" aria-expanded="false" aria-label="Меню">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/topics}">Темы</a>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" th:href="@{/users}">Люди</a>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link position-relative" th:href="@{/messages}">
+                        Сообщения
+                        <span th:if="${unreadMessages != null and unreadMessages > 0}"
+                              class="badge rounded-pill bg-danger ms-1"
+                              th:text="${unreadMessages}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link position-relative" th:href="@{/notifications}">
+                        🔔
+                        <span th:if="${unreadNotifications != null and unreadNotifications > 0}"
+                              class="badge rounded-pill bg-danger ms-1"
+                              th:text="${unreadNotifications}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','MODERATOR')">
+                    <a class="nav-link text-warning" th:href="@{/admin}">Админка</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+
+                <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <a class="nav-link" th:href="@{/login}">Войти</a>
+                </li>
+                <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <a class="btn btn-primary btn-sm" th:href="@{/auth/register}">Регистрация</a>
+                </li>
+
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()" th:if="${me != null}">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img th:if="${me.avatarPath != null}" th:src="${me.avatarPath}"
+                             alt="avatar" class="rounded-circle"
+                             style="width:28px;height:28px;object-fit:cover;">
+                        <span th:if="${me.avatarPath == null}"
+                              class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                              style="width:28px;height:28px;font-size:.85rem;"
+                              th:text="${#strings.substring(me.firstName,0,1)}">?</span>
+                        <span th:text="'@' + ${me.login}">@me</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/profile}">Профиль</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/users/{id}(id=${me.id})}">Моя страница</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/bookmarks}">🔖 Сохранённые</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/history}">🕒 История</a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button type="submit" class="dropdown-item text-danger">Выйти</button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<footer th:fragment="footer" class="bg-dark text-light py-3 mt-5">
+    <div class="container text-center">
+        <small class="text-muted">Formach Forum &copy; 2026</small>
+    </div>
+</footer>
+
+<div th:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</div>
+
+</body>
+</html>

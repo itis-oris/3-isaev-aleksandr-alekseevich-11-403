@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<div th:fragment="postBlock(post, topic, currentUserId, depth)"
+     class="card post-card mb-2"
+     th:classappend="'depth-' + (${depth} > 3 ? 3 : ${depth})">
+
+    <div class="card-body py-2 px-3">
+
+        <div class="mb-1" th:if="${post.pinned or post.bestAnswer or post.likedByTopicAuthor or post.parentAuthorLogin != null}">
+            <span th:if="${post.pinned}" class="badge bg-warning text-dark me-1">Закреплено</span>
+            <span th:if="${post.bestAnswer}" class="badge bg-success me-1">Лучший ответ</span>
+            <span th:if="${post.likedByTopicAuthor}" class="badge bg-primary me-1">Автор оценил</span>
+            <span th:if="${post.parentAuthorLogin != null}" class="text-muted small">
+                &#8618; ответ для
+                <span class="fw-semibold" th:text="${post.parentAuthorLogin}"></span>
+            </span>
+        </div>
+
+        <p class="mb-2" th:if="${post.content != null and !#strings.isEmpty(post.content)}"
+           th:utext="${@textRenderer.render(post.content)}"></p>
+
+        <div th:if="${post.attachments != null and !post.attachments.isEmpty()}"
+             class="d-flex flex-wrap gap-2 mb-2">
+            <div th:each="a : ${post.attachments}"
+                 th:with="ext=${#strings.toLowerCase(#strings.substringAfter(a.url, '.'))}"
+                 style="max-width:240px">
+                <a th:if="${ext == 'jpg' or ext == 'jpeg' or ext == 'png' or ext == 'webp' or ext == 'gif'}"
+                   th:href="${a.url}" target="_blank">
+                    <img th:src="${a.url}" th:alt="${a.originalName}"
+                         style="max-width:240px;max-height:240px;border-radius:6px;">
+                </a>
+
+                <video th:if="${ext == 'mp4' or ext == 'webm' or ext == 'ogg' or ext == 'mov'}"
+                       controls preload="metadata"
+                       style="max-width:240px;max-height:240px;border-radius:6px;">
+                    <source th:src="${a.url}" th:type="${a.mimeType}">
+                </video>
+
+                <a th:unless="${ext == 'jpg' or ext == 'jpeg' or ext == 'png' or ext == 'webp' or ext == 'gif'
+                              or ext == 'mp4' or ext == 'webm' or ext == 'ogg' or ext == 'mov'}"
+                   th:href="${a.url}" target="_blank"
+                   class="btn btn-outline-secondary btn-sm"
+                   th:text="'📎 ' + ${a.originalName}"></a>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <small class="text-muted me-auto">
+                <a th:href="@{/users/{id}(id=${post.authorId})}"
+                   th:text="${post.authorLogin}"
+                   class="text-muted fw-semibold text-decoration-none"></a>
+                &nbsp;&middot;&nbsp;
+                <span th:text="${#temporals.format(post.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                <span th:if="${post.editedAt != null}" class="fst-italic"> (изм.)</span>
+            </small>
+
+            <button type="button"
+                    class="btn btn-sm like-btn"
+                    th:classappend="${post.likedByCurrentUser} ? 'btn-primary' : 'btn-outline-secondary'"
+                    th:attr="data-post-id=${post.id}"
+                    th:data-liked="${post.likedByCurrentUser}">
+                &#9829; <span class="like-count" th:text="${post.likeCount}">0</span>
+            </button>
+
+            <button class="btn btn-sm btn-outline-secondary"
+                    th:if="${!topic.isClosed}"
+                    th:attr="data-bs-toggle='collapse',data-bs-target='#reply-' + ${post.id}">
+                Ответить
+            </button>
+
+            <a th:if="${post.authorId != currentUserId}"
+               th:href="@{/complaints/new(postId=${post.id})}"
+               class="btn btn-sm btn-outline-danger" title="Пожаловаться">🚩</a>
+
+            <div th:if="${post.authorId == currentUserId}" class="d-flex gap-1">
+                <a th:href="@{/posts/{id}/edit(id=${post.id})}"
+                   class="btn btn-sm btn-outline-secondary">Изменить</a>
+                <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Удалить сообщение?')">Удалить</button>
+                </form>
+            </div>
+
+            <div th:if="${topic.authorId == currentUserId and post.authorId != currentUserId}"
+                 class="d-flex gap-1">
+                <form th:action="@{/posts/{id}/pin(id=${post.id})}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-sm"
+                            th:classappend="${post.pinned} ? 'btn-warning' : 'btn-outline-warning'"
+                            th:text="${post.pinned} ? 'Открепить' : 'Закрепить'"></button>
+                </form>
+
+                <form th:if="${topic.type.name() == 'QUESTION'}"
+                      th:action="@{/posts/{id}/best(id=${post.id})}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-sm"
+                            th:classappend="${post.bestAnswer} ? 'btn-success' : 'btn-outline-success'"
+                            th:text="${post.bestAnswer} ? 'Снять лучший ответ' : 'Лучший ответ'"></button>
+                </form>
+
+                <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Удалить?')">Удалить</button>
+                </form>
+            </div>
+        </div>
+
+        <div th:id="'reply-' + ${post.id}" class="collapse mt-2" th:if="${!topic.isClosed}">
+            <form th:action="@{/posts/topic/{id}(id=${topic.id})}" method="post"
+                  enctype="multipart/form-data">
+                <input type="hidden" name="parentId" th:value="${post.id}"/>
+                <textarea class="form-control mb-2" name="content" rows="2"
+                          placeholder="Ваш ответ..."></textarea>
+                <input type="file" class="form-control form-control-sm mb-2" multiple
+                       name="attachments" accept="image/*,video/*,.pdf,.txt,.zip">
+                <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${post.replies != null and !post.replies.empty}" class="ms-3 mt-1 mb-2 pe-2">
+        <div th:each="reply : ${post.replies}">
+            <div th:replace="~{fragments/post :: postBlock(${reply}, ${topic}, ${currentUserId}, ${depth + 1})}"></div>
+        </div>
+    </div>
+
+</div>
+
+<script th:fragment="likeScript">
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.like-btn');
+    if (!btn) return;
+    e.preventDefault();
+    const postId = btn.dataset.postId;
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+    fetch('/api/posts/' + postId + '/like', { method: 'POST', headers })
+        .then(r => r.json())
+        .then(data => {
+            btn.querySelector('.like-count').textContent = data.likeCount;
+            btn.classList.toggle('btn-primary', data.liked);
+            btn.classList.toggle('btn-outline-secondary', !data.liked);
+        });
+});
+</script>
+</html>

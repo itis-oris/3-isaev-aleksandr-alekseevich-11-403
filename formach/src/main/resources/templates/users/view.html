@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head(${user.login + ' — профиль'})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <a th:href="@{/topics}" class="btn btn-outline-secondary btn-sm mb-4">← К темам форума</a>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <img th:if="${user.avatarPath != null}" th:src="${user.avatarPath}"
+                             alt="avatar" class="rounded-circle"
+                             style="width:64px;height:64px;object-fit:cover;flex-shrink:0;">
+                        <div th:if="${user.avatarPath == null}"
+                             class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width:64px;height:64px;font-size:1.8rem;flex-shrink:0;">
+                            <span th:text="${#strings.substring(user.firstName,0,1)}">?</span>
+                        </div>
+                        <div>
+                            <h1 class="h4 mb-0">
+                                <span th:text="${user.firstName + ' ' + user.lastName}"></span>
+                            </h1>
+                            <div class="mt-1">
+                                <span class="text-muted small me-2">@<span th:text="${user.login}"></span></span>
+                                <span class="badge me-1"
+                                      th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-danger' : 'bg-success'"
+                                      th:text="${user.role.name()}"></span>
+                                <span th:if="${user.isBanned}" class="badge bg-warning text-dark">Заблокирован</span>
+                            </div>
+                            <small class="text-muted">
+                                Зарегистрирован:
+                                <span th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy')}"></span>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 text-center mb-3">
+                        <div class="col-3">
+                            <a th:href="@{/users/{id}/topics(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${user.topicCount}">0</div>
+                                    <div class="small text-muted">Тем</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-3">
+                            <a th:href="@{/users/{id}/posts(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${user.postCount}">0</div>
+                                    <div class="small text-muted">Постов</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-3">
+                            <a th:href="@{/users/{id}/followers(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${followerCount}">0</div>
+                                    <div class="small text-muted">Подписчики</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-3">
+                            <a th:href="@{/users/{id}/following(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${followingCount}">0</div>
+                                    <div class="small text-muted">Подписки</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-2">
+                        <a th:if="${isOwn}" th:href="@{/profile}"
+                           class="btn btn-outline-primary btn-sm">Редактировать профиль</a>
+
+                        <th:block th:unless="${isOwn}" sec:authorize="isAuthenticated()">
+                            <form th:unless="${isFollowing}"
+                                  th:action="@{/users/{id}/follow(id=${user.id})}" method="post">
+                                <button type="submit" class="btn btn-primary btn-sm">Подписаться</button>
+                            </form>
+                            <form th:if="${isFollowing}"
+                                  th:action="@{/users/{id}/unfollow(id=${user.id})}" method="post">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Отписаться</button>
+                            </form>
+                            <a th:href="@{/messages/{id}(id=${user.id})}"
+                               class="btn btn-outline-primary btn-sm">Написать сообщение</a>
+                            <a th:href="@{/complaints/new(userId=${user.id})}"
+                               class="btn btn-outline-danger btn-sm">🚩 Пожаловаться</a>
+                        </th:block>
+                    </div>
+                </div>
+            </div>
+
+            <section class="mt-4">
+                <h2 class="h5 mb-3">📝 Стена</h2>
+
+                <div th:if="${isOwn}" class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <form th:action="@{/wall/{id}/publish(id=${user.id})}"
+                              method="post" enctype="multipart/form-data">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <div class="mb-2">
+                                <textarea name="content" rows="3" class="form-control"
+                                          placeholder="Что у вас нового? (markdown, @упоминания, YouTube — поддерживаются)"></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <input type="file" class="form-control form-control-sm" multiple
+                                       name="files" accept="image/*,video/*,.pdf,.txt,.zip">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Опубликовать</button>
+                        </form>
+                    </div>
+                </div>
+
+                <p th:if="${wallPosts.totalElements == 0}" class="text-muted text-center py-3">
+                    Здесь пока пусто.
+                </p>
+
+                <div th:each="wp : ${wallPosts.content}" class="card shadow-sm mb-2">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted"
+                                   th:text="${#temporals.format(wp.createdAt, 'dd.MM.yyyy HH:mm')}"></small>
+                            <form th:if="${isOwn}"
+                                  th:action="@{/wall/{id}/delete(id=${wp.id})}" method="post" class="m-0">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <input type="hidden" name="ownerId" th:value="${user.id}">
+                                <button class="btn btn-sm btn-link text-danger p-0"
+                                        onclick="return confirm('Удалить запись?')">✕</button>
+                            </form>
+                        </div>
+
+                        <div th:if="${wp.content != null and !#strings.isEmpty(wp.content)}"
+                             th:utext="${@textRenderer.render(wp.content)}"></div>
+
+                        <div th:if="${wp.attachments != null and !wp.attachments.isEmpty()}"
+                             class="d-flex flex-wrap gap-2 mt-2">
+                            <div th:each="a : ${wp.attachments}"
+                                 th:with="ext=${#strings.toLowerCase(#strings.substringAfter(a.storedPath, '.'))}"
+                                 style="max-width:240px">
+                                <a th:if="${ext == 'jpg' or ext == 'jpeg' or ext == 'png' or ext == 'webp' or ext == 'gif'}"
+                                   th:href="${a.storedPath}" target="_blank">
+                                    <img th:src="${a.storedPath}" th:alt="${a.originalName}"
+                                         style="max-width:240px;max-height:240px;border-radius:6px;">
+                                </a>
+                                <video th:if="${ext == 'mp4' or ext == 'webm' or ext == 'ogg' or ext == 'mov'}"
+                                       controls preload="metadata"
+                                       style="max-width:240px;max-height:240px;border-radius:6px;">
+                                    <source th:src="${a.storedPath}" th:type="${a.mimeType}">
+                                </video>
+                                <a th:unless="${ext == 'jpg' or ext == 'jpeg' or ext == 'png' or ext == 'webp' or ext == 'gif'
+                                              or ext == 'mp4' or ext == 'webm' or ext == 'ogg' or ext == 'mov'}"
+                                   th:href="${a.storedPath}" target="_blank"
+                                   class="btn btn-outline-secondary btn-sm"
+                                   th:text="'📎 ' + ${a.originalName}"></a>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-2 border-top"
+                             th:if="${wp.comments != null and !wp.comments.isEmpty()}">
+                            <div th:each="c : ${wp.comments}" class="d-flex gap-2 mb-2 small">
+                                <a th:href="@{/users/{id}(id=${c.author.id})}"
+                                   class="fw-semibold text-decoration-none flex-shrink-0"
+                                   th:text="'@' + ${c.author.login}"></a>
+                                <div class="flex-grow-1">
+                                    <span th:utext="${@textRenderer.render(c.content)}"></span>
+                                    <span class="text-muted ms-2"
+                                          th:text="${#temporals.format(c.createdAt, 'dd.MM HH:mm')}"></span>
+                                </div>
+                                <form th:if="${currentUser != null and
+                                              (currentUser.id == c.author.id
+                                               or currentUser.id == wp.owner.id
+                                               or (currentUser.role != null and currentUser.role.name() == 'ADMIN'))}"
+                                      th:action="@{/wall/comments/{cid}/delete(cid=${c.id})}"
+                                      method="post" class="m-0">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                    <button class="btn btn-link p-0 text-danger small"
+                                            onclick="return confirm('Удалить комментарий?')">✕</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <form th:if="${currentUser != null}"
+                              th:action="@{/wall/{id}/comment(id=${wp.id})}" method="post"
+                              class="d-flex gap-2 mt-2">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <input type="hidden" name="ownerId" th:value="${user.id}">
+                            <input type="text" name="content" class="form-control form-control-sm"
+                                   placeholder="Комментарий..." required>
+                            <button type="submit" class="btn btn-outline-primary btn-sm">→</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

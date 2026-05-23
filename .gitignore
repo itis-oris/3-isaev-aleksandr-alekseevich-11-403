@@ -1,0 +1,5 @@
+uploads/
+.env
+target/
+.idea/
+*.iml

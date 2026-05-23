@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Жалобы — Админка')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a th:href="@{/admin}" class="btn btn-outline-secondary btn-sm">← Дашборд</a>
+        <h1 class="h3 mb-0">Жалобы</h1>
+        <a th:href="@{/admin/users}" class="btn btn-outline-secondary btn-sm ms-auto">Пользователи</a>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <span class="text-muted align-self-center small">Фильтр:</span>
+        <a th:href="@{/admin/complaints}"
+           class="btn btn-sm"
+           th:classappend="${status == ''} ? 'btn-primary' : 'btn-outline-secondary'">Все</a>
+        <a th:href="@{/admin/complaints(status='PENDING')}"
+           class="btn btn-sm"
+           th:classappend="${status == 'PENDING'} ? 'btn-primary' : 'btn-outline-secondary'">На проверке</a>
+        <a th:href="@{/admin/complaints(status='REVIEWED')}"
+           class="btn btn-sm"
+           th:classappend="${status == 'REVIEWED'} ? 'btn-primary' : 'btn-outline-secondary'">Одобрены</a>
+        <a th:href="@{/admin/complaints(status='REJECTED')}"
+           class="btn btn-sm"
+           th:classappend="${status == 'REJECTED'} ? 'btn-primary' : 'btn-outline-secondary'">Отклонены</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>От кого</th>
+                <th>Объект</th>
+                <th>На пользователя</th>
+                <th>Причина / пруфы</th>
+                <th>Статус</th>
+                <th>Дата</th>
+                <th>Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${complaints.content}">
+                <td class="text-muted small" th:text="${c.id}"></td>
+                <td>
+                    <a th:href="@{/users/{id}(id=${c.author.id})}"
+                       th:text="${c.author.login}"
+                       class="text-decoration-none fw-semibold"></a>
+                </td>
+                <td>
+                    <a th:if="${c.post != null}"
+                       th:href="@{/topics/{id}(id=${c.post.topic.id})}"
+                       th:text="'Пост #' + ${c.post.id}"
+                       class="text-decoration-none d-block"></a>
+                    <a th:if="${c.topic != null}"
+                       th:href="@{/topics/{id}(id=${c.topic.id})}"
+                       th:text="'Тема: ' + ${c.topic.title}"
+                       class="text-decoration-none d-block"></a>
+                    <span th:if="${c.post == null and c.topic == null}" class="text-muted">—</span>
+                </td>
+                <td>
+                    <a th:if="${c.reportedUser != null}"
+                       th:href="@{/users/{id}(id=${c.reportedUser.id})}"
+                       th:text="'@' + ${c.reportedUser.login}"
+                       class="text-decoration-none"></a>
+                    <span th:unless="${c.reportedUser != null}" class="text-muted">—</span>
+                </td>
+                <td style="max-width:300px;">
+                    <div class="text-break small" th:text="${c.reason}"></div>
+                    <div th:if="${c.attachments != null and !c.attachments.isEmpty()}"
+                         class="d-flex flex-wrap gap-1 mt-2">
+                        <a th:each="a : ${c.attachments}"
+                           th:href="${a.storedPath}" target="_blank"
+                           class="border rounded p-1 small text-decoration-none"
+                           th:title="${a.originalName}">
+                            <img th:if="${a.mimeType != null and #strings.startsWith(a.mimeType, 'image/')}"
+                                 th:src="${a.storedPath}" alt=""
+                                 style="width:60px;height:60px;object-fit:cover;border-radius:4px;">
+                            <span th:unless="${a.mimeType != null and #strings.startsWith(a.mimeType, 'image/')}"
+                                  th:text="'📎 ' + ${a.originalName}"></span>
+                        </a>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${c.status.name() == 'PENDING'} ? 'bg-warning text-dark' : (${c.status.name() == 'REVIEWED'} ? 'bg-success' : 'bg-secondary')"
+                          th:text="${c.status.name()}"></span>
+                </td>
+                <td class="text-muted small"
+                    th:text="${#temporals.format(c.createdAt, 'dd.MM.yyyy HH:mm')}"></td>
+                <td>
+                    <a th:href="@{/admin/complaints/{id}(id=${c.id})}"
+                       class="btn btn-sm btn-outline-primary">Открыть</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <nav th:if="${complaints.totalPages > 1}" aria-label="Пагинация">
+        <ul class="pagination justify-content-center">
+            <li th:each="i : ${#numbers.sequence(0, complaints.totalPages - 1)}"
+                class="page-item" th:classappend="${i == complaints.number} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/admin/complaints(status=${status},page=${i})}"
+                   th:text="${i + 1}"></a>
+            </li>
+        </ul>
+    </nav>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

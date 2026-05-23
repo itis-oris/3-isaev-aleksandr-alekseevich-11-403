@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<div th:fragment="tagSelector(allTags, selectedIds)" class="tag-selector-wrapper">
+
+    <th:block th:each="tagId : ${selectedIds}">
+        <input type="hidden" class="js-preselected-tag" th:value="${tagId}">
+    </th:block>
+
+    <div class="ts-box" id="ts-box">
+        <div class="ts-chips" id="ts-chips"></div>
+        <input type="text" class="ts-search" id="ts-search"
+               placeholder="Поиск тегов..." autocomplete="off">
+    </div>
+
+    <div class="ts-dropdown" id="ts-dropdown">
+        <div th:each="tag : ${allTags}"
+             class="ts-option"
+             th:attr="data-id=${tag.id},data-name=${tag.name}"
+             th:text="${tag.name}">
+        </div>
+        <div class="ts-empty" id="ts-empty" style="display:none;">Теги не найдены</div>
+    </div>
+
+    <div id="ts-hidden-inputs"></div>
+
+    <div class="mt-2">
+        <input type="text" name="newTags" id="ts-new-tags"
+               class="form-control"
+               placeholder="Новые теги через запятую: React, Docker, ...">
+    </div>
+
+    <script>
+    (function () {
+        const box       = document.getElementById('ts-box');
+        const chipsEl   = document.getElementById('ts-chips');
+        const searchEl  = document.getElementById('ts-search');
+        const dropdown  = document.getElementById('ts-dropdown');
+        const hiddenEl  = document.getElementById('ts-hidden-inputs');
+        const emptyEl   = document.getElementById('ts-empty');
+        const options   = [...document.querySelectorAll('.ts-option')];
+
+        const selected = new Map();
+
+        [...document.querySelectorAll('.js-preselected-tag')].forEach(inp => {
+            const id = inp.value;
+            const opt = options.find(o => o.dataset.id === id);
+            if (opt) selected.set(id, opt.dataset.name);
+        });
+
+        renderAll();
+
+        box.addEventListener('click', () => { searchEl.focus(); openDropdown(); });
+
+        searchEl.addEventListener('input', () => openDropdown());
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.tag-selector-wrapper')) closeDropdown();
+        });
+
+        dropdown.addEventListener('mousedown', e => {
+            const opt = e.target.closest('.ts-option');
+            if (!opt) return;
+            e.preventDefault();
+            selected.set(opt.dataset.id, opt.dataset.name);
+            searchEl.value = '';
+            renderAll();
+            openDropdown();
+        });
+
+        function renderAll() {
+            renderChips();
+            renderHiddenInputs();
+            filterOptions(searchEl.value);
+        }
+
+        function renderChips() {
+            chipsEl.innerHTML = '';
+            selected.forEach((name, id) => {
+                const chip = document.createElement('span');
+                chip.className = 'ts-chip';
+                chip.innerHTML =
+                    name +
+                    '<button type="button" class="ts-chip-remove" data-id="' + id + '">&times;</button>';
+                chip.querySelector('.ts-chip-remove').addEventListener('click', () => {
+                    selected.delete(id);
+                    renderAll();
+                });
+                chipsEl.appendChild(chip);
+            });
+        }
+
+        function renderHiddenInputs() {
+            hiddenEl.innerHTML = '';
+            selected.forEach((_, id) => {
+                const inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'tagIds';
+                inp.value = id;
+                hiddenEl.appendChild(inp);
+            });
+        }
+
+        function filterOptions(query) {
+            const q = query.toLowerCase().trim();
+            let visible = 0;
+            options.forEach(opt => {
+                const match = !q || opt.dataset.name.toLowerCase().includes(q);
+                const notSelected = !selected.has(opt.dataset.id);
+                opt.style.display = (match && notSelected) ? '' : 'none';
+                if (match && notSelected) visible++;
+            });
+            emptyEl.style.display = visible ? 'none' : '';
+        }
+
+        function openDropdown() {
+            filterOptions(searchEl.value);
+            dropdown.style.display = 'block';
+        }
+
+        function closeDropdown() {
+            dropdown.style.display = 'none';
+        }
+    })();
+    </script>
+</div>
+
+</html>

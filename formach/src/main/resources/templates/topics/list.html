@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Темы форума')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">Темы форума</h1>
+        <a th:href="@{/topics/create}" class="btn btn-primary">+ Создать тему</a>
+    </div>
+
+    <form method="get" th:action="@{/topics}" class="mb-3">
+        <div class="row g-2 mb-2">
+            <div class="col-md">
+                <input type="text" name="search" class="form-control"
+                       th:value="${search}" placeholder="Поиск по заголовку темы...">
+            </div>
+            <div class="col-md-auto">
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    <option value="new"       th:selected="${sort == 'new'}">Сначала новые</option>
+                    <option value="popular"   th:selected="${sort == 'popular'}">По популярности</option>
+                    <option value="discussed" th:selected="${sort == 'discussed'}">По обсуждению</option>
+                </select>
+            </div>
+            <input type="hidden" name="status" th:value="${status}">
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-outline-primary">Найти</button>
+            </div>
+            <div class="col-md-auto" th:if="${(search != null and !#strings.isEmpty(search)) or
+                                              (tagIds != null and !#lists.isEmpty(tagIds)) or
+                                              (status != null and !#strings.isEmpty(status))}">
+                <a th:href="@{/topics}" class="btn btn-outline-secondary">Сброс</a>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-bs-toggle="modal" data-bs-target="#tagPickerModal">
+                🏷 Выбрать теги
+                <span class="badge bg-primary ms-1"
+                      th:if="${tagIds != null and !#lists.isEmpty(tagIds)}"
+                      th:text="${#lists.size(tagIds)}"></span>
+            </button>
+
+            <span th:each="t : ${allTags}"
+                  th:if="${tagIds != null and tagIds.contains(t.id)}"
+                  class="badge bg-light text-dark border"
+                  th:text="${t.name}"></span>
+        </div>
+    </form>
+
+    <div class="modal fade" id="tagPickerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Выбрать теги</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="tagFilter" class="form-control mb-2"
+                           placeholder="Поиск тега...">
+                    <div id="tagList" class="d-flex flex-column gap-1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" id="tagClearAll">
+                        Снять все
+                    </button>
+                    <button type="button" class="btn btn-primary"
+                            data-bs-dismiss="modal" id="tagApply">Применить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4 align-items-center small">
+        <span class="text-muted">Статус:</span>
+        <a th:href="@{/topics(search=${search}, tagIds=${tagIds}, sort=${sort})}"
+           class="btn btn-sm"
+           th:classappend="${#strings.isEmpty(status)} ? 'btn-primary' : 'btn-outline-secondary'">Все</a>
+        <a th:href="@{/topics(search=${search}, tagIds=${tagIds}, sort=${sort}, status='solved')}"
+           class="btn btn-sm"
+           th:classappend="${status == 'solved'} ? 'btn-success' : 'btn-outline-success'">✅ Решённые</a>
+        <a th:href="@{/topics(search=${search}, tagIds=${tagIds}, sort=${sort}, status='unsolved')}"
+           class="btn btn-sm"
+           th:classappend="${status == 'unsolved'} ? 'btn-warning' : 'btn-outline-warning'">❓ Нерешённые</a>
+        <a th:href="@{/topics(search=${search}, tagIds=${tagIds}, sort=${sort}, status='info')}"
+           class="btn btn-sm"
+           th:classappend="${status == 'info'} ? 'btn-info' : 'btn-outline-info'">ℹ️ Информационные</a>
+    </div>
+
+    <div th:each="topic : ${topics.content}" class="card mb-3 shadow-sm"
+         th:classappend="${topic.pinnedByAdmin} ? 'border-warning' : ''">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div class="flex-grow-1">
+                    <h5 class="card-title mb-1">
+                        <span th:if="${topic.pinnedByAdmin}" class="badge bg-warning text-dark me-1">📌 Закреплено</span>
+                        <a th:href="@{/topics/{id}(id=${topic.id})}"
+                           th:text="${topic.title}"
+                           class="text-decoration-none text-dark fw-semibold"></a>
+                    </h5>
+                    <div class="mb-2">
+                        <span th:if="${topic.type.name() == 'QUESTION'}"
+                              class="badge bg-info text-dark me-1">Вопрос</span>
+                        <span th:if="${topic.type.name() == 'INFO'}"
+                              class="badge bg-secondary me-1">Информация</span>
+                        <span th:if="${topic.isClosed}" class="badge bg-secondary me-1">закрыто</span>
+                        <span th:each="tag : ${topic.tags}"
+                              class="badge bg-light text-dark border me-1"
+                              th:text="${tag}"></span>
+                    </div>
+                    <small class="text-muted">
+                        <a th:href="@{/users/{id}(id=${topic.authorId})}"
+                           th:text="${topic.authorLogin}"
+                           class="text-muted text-decoration-none fw-semibold"></a>
+                        &nbsp;&middot;&nbsp;
+                        <span th:text="${#temporals.format(topic.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                    </small>
+                </div>
+                <div class="text-end text-muted small flex-shrink-0">
+                    <div><span th:text="${topic.viewCount}">0</span> просм.</div>
+                    <div><span th:text="${topic.postCount}">0</span> отв.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${topics.content.empty}" class="text-center text-muted py-5">
+        <p th:if="${search != null and !#strings.isEmpty(search)}">Ничего не найдено.</p>
+        <p th:unless="${search != null and !#strings.isEmpty(search)}">Тем пока нет. Будьте первым!</p>
+    </div>
+
+    <nav th:if="${topics.totalPages > 1}" aria-label="Пагинация">
+        <ul class="pagination justify-content-center">
+            <li th:each="i : ${#numbers.sequence(0, topics.totalPages - 1)}"
+                class="page-item" th:classappend="${i == topics.number} ? 'active'">
+                <a class="page-link"
+                   th:href="@{/topics(search=${search},tagIds=${tagIds},status=${status},sort=${sort},page=${i})}"
+                   th:text="${i + 1}"></a>
+            </li>
+        </ul>
+    </nav>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script th:inline="javascript">
+(function () {
+    var allTags = /*[[${allTags}]]*/ [];
+    var selectedIds = /*[[${tagIds}]]*/ [];
+    selectedIds = (selectedIds || []).map(String);
+
+    var sorted = (allTags || []).slice().sort(function (a, b) {
+        return a.name.localeCompare(b.name, 'ru');
+    });
+
+    var form = document.querySelector('form[action$="/topics"]');
+    var listEl = document.getElementById('tagList');
+    var filterEl = document.getElementById('tagFilter');
+    var clearBtn = document.getElementById('tagClearAll');
+    var applyBtn = document.getElementById('tagApply');
+
+    function render(filter) {
+        var q = (filter || '').toLowerCase().trim();
+        listEl.innerHTML = '';
+        sorted.forEach(function (t) {
+            if (q && t.name.toLowerCase().indexOf(q) === -1) return;
+            var id = 'tag-' + t.id;
+            var item = document.createElement('label');
+            item.className = 'form-check';
+            item.innerHTML =
+                '<input class="form-check-input" type="checkbox" id="' + id + '" value="' + t.id + '"' +
+                (selectedIds.indexOf(String(t.id)) !== -1 ? ' checked' : '') + '>' +
+                '<span class="form-check-label ms-1">' + escapeHtml(t.name) + '</span>';
+            item.querySelector('input').addEventListener('change', function (e) {
+                var v = String(t.id);
+                if (e.target.checked) {
+                    if (selectedIds.indexOf(v) === -1) selectedIds.push(v);
+                } else {
+                    selectedIds = selectedIds.filter(function (x) { return x !== v; });
+                }
+            });
+            listEl.appendChild(item);
+        });
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+        });
+    }
+
+    if (filterEl) filterEl.addEventListener('input', function () { render(filterEl.value); });
+    if (clearBtn) clearBtn.addEventListener('click', function () {
+        selectedIds = [];
+        render(filterEl.value);
+    });
+
+    if (applyBtn) applyBtn.addEventListener('click', function () {
+        form.querySelectorAll('input[name="tagIds"]').forEach(function (el) { el.remove(); });
+        selectedIds.forEach(function (id) {
+            var h = document.createElement('input');
+            h.type = 'hidden';
+            h.name = 'tagIds';
+            h.value = id;
+            form.appendChild(h);
+        });
+        form.submit();
+    });
+
+    render('');
+})();
+</script>
+</body>
+</html>

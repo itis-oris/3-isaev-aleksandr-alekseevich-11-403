@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Главная')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="text-center py-4">
+        <h1 class="display-5 fw-bold mb-3">
+            Привет, <span th:text="${user.firstName}">пользователь</span>!
+        </h1>
+        <p class="lead text-muted mb-4">Добро пожаловать на Formach Forum</p>
+        <a th:href="@{/topics}" class="btn btn-primary btn-lg">К темам</a>
+    </div>
+
+    <section class="row justify-content-center mt-4"
+             th:if="${subscriptionFeed != null and !#lists.isEmpty(subscriptionFeed)}">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h4 mb-0">👤 От моих подписок</h2>
+            </div>
+            <div class="list-group mb-4">
+                <a th:each="t : ${subscriptionFeed}"
+                   th:href="@{/topics/{id}(id=${t.id})}"
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="fw-semibold" th:text="${t.title}">title</div>
+                            <small class="text-muted">
+                                @<span th:text="${t.authorLogin}"></span>
+                                ·
+                                <span th:text="${#temporals.format(t.createdAt, 'dd.MM HH:mm')}"></span>
+                            </small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="row justify-content-center mt-4"
+             th:if="${todayTopics != null and !#lists.isEmpty(todayTopics)}">
+        <div class="col-lg-8">
+            <h2 class="h4 mb-3">🆕 За сегодня</h2>
+            <div class="list-group mb-4">
+                <a th:each="t : ${todayTopics}"
+                   th:href="@{/topics/{id}(id=${t.id})}"
+                   class="list-group-item list-group-item-action">
+                    <div class="fw-semibold" th:text="${t.title}">title</div>
+                    <small class="text-muted">
+                        @<span th:text="${t.authorLogin}"></span>
+                        ·
+                        <span th:text="${#temporals.format(t.createdAt, 'HH:mm')}"></span>
+                    </small>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="row justify-content-center mt-4">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h4 mb-0">🔥 Популярные темы</h2>
+                <a th:href="@{/topics(sort='popular')}" class="text-muted small">Все →</a>
+            </div>
+
+            <p th:if="${#lists.isEmpty(popularTopics)}" class="text-muted">
+                Пока ни одной темы.
+            </p>
+
+            <div class="list-group">
+                <a th:each="t : ${popularTopics}"
+                   th:href="@{/topics/{id}(id=${t.id})}"
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-semibold" th:text="${t.title}">title</div>
+                            <small class="text-muted">
+                                @<span th:text="${t.authorLogin}"></span>
+                                ·
+                                <span th:text="${t.postCount} + ' ответов'"></span>
+                                ·
+                                <span th:text="${t.viewCount} + ' просмотров'"></span>
+                            </small>
+                        </div>
+                        <span th:if="${t.isClosed}" class="badge bg-secondary">закрыто</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

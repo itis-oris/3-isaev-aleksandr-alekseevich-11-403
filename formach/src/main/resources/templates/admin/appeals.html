@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Обращения по бану — Админка')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a th:href="@{/admin}" class="btn btn-outline-secondary btn-sm">← Дашборд</a>
+        <h1 class="h3 mb-0">Обращения по бану</h1>
+        <a th:href="@{/admin/complaints}" class="btn btn-outline-secondary btn-sm ms-auto">Жалобы</a>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <span class="text-muted align-self-center small">Фильтр:</span>
+        <a th:href="@{/admin/appeals}" class="btn btn-sm"
+           th:classappend="${status == ''} ? 'btn-primary' : 'btn-outline-secondary'">Все</a>
+        <a th:href="@{/admin/appeals(status='PENDING')}" class="btn btn-sm"
+           th:classappend="${status == 'PENDING'} ? 'btn-primary' : 'btn-outline-secondary'">На рассмотрении</a>
+        <a th:href="@{/admin/appeals(status='REVIEWED')}" class="btn btn-sm"
+           th:classappend="${status == 'REVIEWED'} ? 'btn-primary' : 'btn-outline-secondary'">Принятые</a>
+        <a th:href="@{/admin/appeals(status='REJECTED')}" class="btn btn-sm"
+           th:classappend="${status == 'REJECTED'} ? 'btn-primary' : 'btn-outline-secondary'">Отклонённые</a>
+    </div>
+
+    <p th:if="${appeals.totalElements == 0}" class="text-muted text-center py-4">
+        Обращений нет.
+    </p>
+
+    <div th:each="a : ${appeals.content}" class="card mb-2 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">@<span th:text="${a.login}"></span></div>
+                    <div class="small text-muted"
+                         th:text="${a.email != null ? a.email : ''}"></div>
+                    <p class="mb-2 mt-2" th:text="${a.message}"></p>
+                </div>
+                <div class="text-end">
+                    <span class="badge"
+                          th:classappend="${a.status.name() == 'PENDING'} ? 'bg-warning text-dark' : (${a.status.name() == 'REVIEWED'} ? 'bg-success' : 'bg-secondary')"
+                          th:text="${a.status.name()}"></span>
+                    <div class="small text-muted mt-1"
+                         th:text="${#temporals.format(a.createdAt, 'dd.MM.yyyy HH:mm')}"></div>
+                </div>
+            </div>
+
+            <div th:if="${a.status.name() != 'PENDING' and a.response != null and !#strings.isEmpty(a.response)}"
+                 class="alert alert-light border mt-2 mb-0 small">
+                <strong>Ответ модератора:</strong>
+                <span th:text="${a.response}"></span>
+                <div th:if="${a.resolvedAt != null}" class="text-muted">
+                    <span th:text="${#temporals.format(a.resolvedAt, 'dd.MM.yyyy HH:mm')}"></span>
+                </div>
+            </div>
+
+            <form th:if="${a.status.name() == 'PENDING'}"
+                  th:action="@{/admin/appeals/{id}/resolve(id=${a.id})}" method="post"
+                  class="mt-2">
+                <input type="hidden" name="status" th:value="${status}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <textarea name="response" class="form-control form-control-sm mb-2" rows="2"
+                          placeholder="Ответ пользователю (необязательно)"></textarea>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-success">Принять (разбанить вручную)</button>
+                    <button class="btn btn-sm btn-outline-secondary"
+                            th:formaction="@{/admin/appeals/{id}/reject(id=${a.id})}">Отклонить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <nav th:if="${appeals.totalPages > 1}" class="mt-3">
+        <ul class="pagination justify-content-center">
+            <li th:each="i : ${#numbers.sequence(0, appeals.totalPages - 1)}"
+                class="page-item" th:classappend="${i == appeals.number} ? 'active'">
+                <a class="page-link" th:href="@{/admin/appeals(status=${status},page=${i})}"
+                   th:text="${i + 1}"></a>
+            </li>
+        </ul>
+    </nav>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

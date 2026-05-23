@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Создать тему')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center mb-4">
+                <a th:href="@{/topics}" class="btn btn-outline-secondary btn-sm me-3">← Назад</a>
+                <h1 class="h3 mb-0">Создать тему</h1>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form th:action="@{/topics/create}" th:object="${createRequest}" method="post" enctype="multipart/form-data">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Тип темы</label>
+                            <select class="form-select" th:field="*{type}"
+                                    th:classappend="${#fields.hasErrors('type')} ? 'is-invalid'">
+                                <option value="">Выберите тип</option>
+                                <option value="QUESTION">Вопрос</option>
+                                <option value="INFO">Информация</option>
+                            </select>
+                            <div class="invalid-feedback"
+                                 th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Заголовок</label>
+                            <input type="text" class="form-control" th:field="*{title}"
+                                   placeholder="Заголовок темы"
+                                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid'">
+                            <div class="invalid-feedback"
+                                 th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Описание</label>
+                            <textarea class="form-control" th:field="*{description}" rows="8"
+                                      placeholder="Подробное описание..."
+                                      th:classappend="${#fields.hasErrors('description')} ? 'is-invalid'"></textarea>
+                            <div class="invalid-feedback"
+                                 th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Теги</label>
+                            <div th:replace="~{fragments/tag-selector :: tagSelector(${allTags}, null)}"></div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Прикрепить файлы
+                                <small class="text-muted fw-normal">(можно несколько — картинки, гиф, видео, PDF, .zip, .txt — макс. 50 МБ каждый)</small>
+                            </label>
+                            <input type="file" class="form-control" name="attachments" multiple
+                                   accept="image/*,video/*,.pdf,.txt,.zip">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Создать тему</button>
+                            <a th:href="@{/topics}" class="btn btn-outline-secondary">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script>
+function checkFileSize(input, maxMb) {
+    const error = document.getElementById('file-size-error');
+    if (input.files[0] && input.files[0].size > maxMb * 1024 * 1024) {
+        input.classList.add('is-invalid');
+        error.style.display = 'block';
+        input.value = '';
+    } else {
+        input.classList.remove('is-invalid');
+        error.style.display = 'none';
+    }
+}
+</script>
+</body>
+</html>

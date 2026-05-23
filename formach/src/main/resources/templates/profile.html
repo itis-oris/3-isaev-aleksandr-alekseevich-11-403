@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Мой профиль')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <img th:if="${user.avatarPath != null}" th:src="${user.avatarPath}"
+                             alt="avatar" class="rounded-circle"
+                             style="width:64px;height:64px;object-fit:cover;flex-shrink:0;">
+                        <div th:if="${user.avatarPath == null}"
+                             class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width:64px;height:64px;font-size:1.8rem;flex-shrink:0;">
+                            <span th:text="${#strings.substring(user.firstName,0,1)}">?</span>
+                        </div>
+                        <div>
+                            <h1 class="h4 mb-0">
+                                <span th:text="${user.firstName + ' ' + user.lastName}"></span>
+                            </h1>
+                            <div class="mt-1">
+                                <span class="text-muted small me-2">@<span th:text="${user.login}"></span></span>
+                                <span class="badge me-1"
+                                      th:classappend="${user.role.name() == 'ADMIN'} ? 'bg-danger' : 'bg-success'"
+                                      th:text="${user.role.name()}"></span>
+                                <span th:if="${user.isBanned}" class="badge bg-warning text-dark">Заблокирован</span>
+                            </div>
+                            <small class="text-muted">
+                                Зарегистрирован:
+                                <span th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy')}"></span>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 text-center">
+                        <div class="col">
+                            <a th:href="@{/users/{id}/topics(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${user.topicCount}">0</div>
+                                    <div class="small text-muted">Тем</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a th:href="@{/users/{id}/posts(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${user.postCount}">0</div>
+                                    <div class="small text-muted">Постов</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a th:href="@{/users/{id}/followers(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${followerCount}">0</div>
+                                    <div class="small text-muted">Подписчики</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a th:href="@{/users/{id}/following(id=${user.id})}"
+                               class="card stat-card border-0 bg-light text-decoration-none text-dark">
+                                <div class="card-body py-2">
+                                    <div class="stat-num" th:text="${followingCount}">0</div>
+                                    <div class="small text-muted">Подписки</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm" th:if="${isOwn}">
+                <div class="card-header fw-semibold">Редактировать профиль</div>
+                <div class="card-body p-4">
+                    <form th:action="@{/profile/edit}" th:object="${updateRequest}"
+                          method="post" enctype="multipart/form-data">
+
+                        <div class="mb-3">
+                            <label class="form-label">Аватар</label>
+                            <input type="file" class="form-control" name="avatar"
+                                   accept="image/jpeg,image/png,image/gif,image/webp">
+                            <div class="form-check mt-2" th:if="${user.avatarPath != null}">
+                                <input class="form-check-input" type="checkbox"
+                                       name="removeAvatar" id="removeAvatar" value="true">
+                                <label class="form-check-label" for="removeAvatar">
+                                    Удалить текущий аватар
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Логин</label>
+                            <input type="text" class="form-control" th:field="*{login}"
+                                   th:classappend="${#fields.hasErrors('login')} ? 'is-invalid'">
+                            <div class="invalid-feedback"
+                                 th:if="${#fields.hasErrors('login')}" th:errors="*{login}"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col mb-3">
+                                <label class="form-label">Имя</label>
+                                <input type="text" class="form-control" th:field="*{firstName}"
+                                       th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'">
+                                <div class="invalid-feedback"
+                                     th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
+                            </div>
+                            <div class="col mb-3">
+                                <label class="form-label">Фамилия</label>
+                                <input type="text" class="form-control" th:field="*{lastName}"
+                                       th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'">
+                                <div class="invalid-feedback"
+                                     th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control"
+                                   th:value="${user.email}" readonly disabled>
+                            <div class="form-text">Email изменить нельзя.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Пол</label>
+                            <select class="form-select" th:field="*{gender}"
+                                    th:classappend="${#fields.hasErrors('gender')} ? 'is-invalid'">
+                                <option value="">— не указан —</option>
+                                <option value="MALE">Мужской</option>
+                                <option value="FEMALE">Женский</option>
+                            </select>
+                            <div class="invalid-feedback"
+                                 th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
+                        </div>
+
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                            <a th:href="@{/profile/password}" class="btn btn-outline-secondary">Сменить пароль</a>
+                        </div>
+                        <div class="form-text mt-2">
+                            Пароль меняется отдельно — с подтверждением кодом по email.
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

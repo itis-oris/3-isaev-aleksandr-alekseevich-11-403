@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Сохранённые темы')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="h3 mb-3">🔖 Сохранённые темы</h1>
+
+            <p th:if="${#lists.isEmpty(topics)}" class="text-muted py-4 text-center">
+                Вы пока ничего не сохранили.
+                <br>
+                Откройте интересную тему и нажмите «🔖 В закладки».
+            </p>
+
+            <div th:each="topic : ${topics}" class="card mb-2 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div class="flex-grow-1">
+                            <a th:href="@{/topics/{id}(id=${topic.id})}"
+                               th:text="${topic.title}"
+                               class="text-decoration-none text-dark fw-semibold"></a>
+                            <div class="small text-muted mt-1">
+                                @<span th:text="${topic.authorLogin}"></span>
+                                ·
+                                <span th:text="${topic.postCount}">0</span> ответов
+                            </div>
+                        </div>
+                        <form th:action="@{/bookmarks/topics/{id}/toggle(id=${topic.id})}" method="post" class="m-0">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm"
+                                    title="Убрать из сохранённых">✕</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

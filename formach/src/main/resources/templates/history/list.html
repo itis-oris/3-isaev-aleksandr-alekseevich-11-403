@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('История просмотров')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h1 class="h4 mb-3">🕒 Моя история</h1>
+
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${tab == 'viewed'} ? 'active'"
+                       th:href="@{/history}">👁 Просмотры</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${tab == 'participated'} ? 'active'"
+                       th:href="@{/history/participated}">💬 Где я отвечал</a>
+                </li>
+            </ul>
+
+            <p th:if="${topics.totalElements == 0}" class="text-muted text-center py-4">
+                <span th:if="${tab == 'viewed'}">Вы пока ничего не просматривали.</span>
+                <span th:if="${tab == 'participated'}">Вы пока нигде не оставляли ответов.</span>
+            </p>
+
+            <div class="list-group">
+                <a th:each="t : ${topics.content}"
+                   th:href="@{/topics/{id}(id=${t.id})}"
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="fw-semibold" th:text="${t.title}">title</div>
+                            <small class="text-muted">
+                                @<span th:text="${t.authorLogin}"></span>
+                                ·
+                                <span th:text="${t.postCount}">0</span> ответов
+                            </small>
+                        </div>
+                        <span th:if="${t.isClosed}" class="badge bg-secondary">закрыто</span>
+                    </div>
+                </a>
+            </div>
+
+            <nav th:if="${topics.totalPages > 1}" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    <li th:each="i : ${#numbers.sequence(0, topics.totalPages - 1)}"
+                        class="page-item" th:classappend="${i == topics.number} ? 'active'">
+                        <a class="page-link"
+                           th:href="${tab == 'participated'}
+                                    ? @{/history/participated(page=${i})}
+                                    : @{/history(page=${i})}"
+                           th:text="${i + 1}"></a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

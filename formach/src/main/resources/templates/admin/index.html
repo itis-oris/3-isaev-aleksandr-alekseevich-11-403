@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Панель администратора')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <h1 class="h3 mb-4">Панель администратора</h1>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a th:href="@{/admin/users}" class="btn btn-outline-primary">Пользователи</a>
+        <a th:href="@{/admin/complaints}" class="btn btn-outline-primary">Жалобы</a>
+        <a th:href="@{/admin/appeals}" class="btn btn-outline-primary">Обращения по бану</a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-num" th:text="${stats.users}">0</div>
+                    <div class="text-muted small mt-1">Пользователей</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-num" th:text="${stats.topics}">0</div>
+                    <div class="text-muted small mt-1">Тем</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-num" th:text="${stats.posts}">0</div>
+                    <div class="text-muted small mt-1">Постов</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="fw-bold text-danger" style="font-size:2rem;line-height:1;"
+                         th:text="${stats.pendingComplaints}">0</div>
+                    <div class="text-muted small mt-1">Жалоб на проверке</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Жалоба №' + ${c.id})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <a th:href="@{/admin/complaints}" class="btn btn-outline-secondary btn-sm mb-3">← К списку жалоб</a>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h1 class="h4 mb-0">Жалоба #<span th:text="${c.id}"></span></h1>
+                        <span class="badge"
+                              th:classappend="${c.status.name() == 'PENDING'} ? 'bg-warning text-dark' : (${c.status.name() == 'REVIEWED'} ? 'bg-success' : 'bg-secondary')"
+                              th:text="${c.status.name()}"></span>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-2 small text-muted">
+                        От <a th:href="@{/users/{id}(id=${c.author.id})}"
+                              th:text="'@' + ${c.author.login}"></a>
+                        <span th:text="', ' + ${#temporals.format(c.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Объект жалобы:</div>
+                        <div>
+                            <a th:if="${c.post != null}"
+                               th:href="@{/topics/{tid}(tid=${c.post.topic.id})}"
+                               th:text="'Пост #' + ${c.post.id} + ' в теме «' + ${c.post.topic.title} + '»'"></a>
+                            <a th:if="${c.topic != null}"
+                               th:href="@{/topics/{tid}(tid=${c.topic.id})}"
+                               th:text="'Тема: ' + ${c.topic.title}"></a>
+                            <a th:if="${c.reportedUser != null}"
+                               th:href="@{/users/{uid}(uid=${c.reportedUser.id})}"
+                               th:text="'Пользователь @' + ${c.reportedUser.login}"></a>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="text-muted small">Текст жалобы:</div>
+                        <div class="border rounded p-2" th:text="${c.reason}"></div>
+                    </div>
+
+                    <div th:if="${c.attachments != null and !c.attachments.isEmpty()}" class="mb-3">
+                        <div class="text-muted small mb-1">Пруфы:</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a th:each="a : ${c.attachments}"
+                               th:href="${a.storedPath}" target="_blank"
+                               class="border rounded p-1 small text-decoration-none"
+                               th:title="${a.originalName}">
+                                <img th:if="${a.mimeType != null and #strings.startsWith(a.mimeType, 'image/')}"
+                                     th:src="${a.storedPath}" alt=""
+                                     style="width:90px;height:90px;object-fit:cover;border-radius:4px;">
+                                <span th:unless="${a.mimeType != null and #strings.startsWith(a.mimeType, 'image/')}"
+                                      th:text="'📎 ' + ${a.originalName}"></span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div th:if="${c.resolution != null and !#strings.isEmpty(c.resolution)}"
+                         class="alert alert-info">
+                        <strong>Ответ админа:</strong>
+                        <div th:text="${c.resolution}"></div>
+                    </div>
+
+                    <div th:if="${c.status.name() == 'PENDING'}">
+                        <hr>
+                        <h2 class="h6">Принять решение</h2>
+
+                        <form th:action="@{/admin/complaints/{id}/resolve(id=${c.id})}" method="post"
+                              class="border-success border rounded p-3 mb-2">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                            <div class="mb-2">
+                                <label class="form-label small">Ответ автору жалобы</label>
+                                <textarea name="resolution" rows="2" class="form-control"
+                                          placeholder="Например: пользователь наказан, пост удалён"></textarea>
+                            </div>
+
+                            <div class="form-check mb-1" th:if="${c.post != null}">
+                                <input class="form-check-input" type="checkbox"
+                                       name="deletePost" value="true" id="dp">
+                                <label class="form-check-label text-danger" for="dp">Удалить пост</label>
+                            </div>
+                            <div class="form-check mb-1" th:if="${c.topic != null}">
+                                <input class="form-check-input" type="checkbox"
+                                       name="deleteTopic" value="true" id="dt">
+                                <label class="form-check-label text-danger" for="dt">Удалить тему</label>
+                            </div>
+                            <div class="form-check mb-2" th:if="${c.reportedUser != null}">
+                                <input class="form-check-input" type="checkbox"
+                                       name="banAuthor" value="true" id="ba">
+                                <label class="form-check-label text-danger" for="ba">
+                                    Забанить @<span th:text="${c.reportedUser.login}"></span>
+                                </label>
+                            </div>
+
+                            <div class="row g-2 mb-2" th:if="${c.reportedUser != null}">
+                                <div class="col-md">
+                                    <input type="text" name="banReason" class="form-control form-control-sm"
+                                           placeholder="Причина бана (необязательно)">
+                                </div>
+                                <div class="col-md-auto">
+                                    <input type="datetime-local" name="bannedUntil"
+                                           class="form-control form-control-sm">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success">✓ Принять</button>
+                        </form>
+
+                        <form th:action="@{/admin/complaints/{id}/reject(id=${c.id})}" method="post"
+                              class="border-secondary border rounded p-3">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <div class="mb-2">
+                                <label class="form-label small">Ответ автору</label>
+                                <textarea name="resolution" rows="2" class="form-control"
+                                          placeholder="Например: недостаточно доказательств / нарушений нет"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-outline-secondary">✕ Отклонить</button>
+                        </form>
+                    </div>
+
+                    <div th:if="${c.resolvedAt != null}" class="text-muted small mt-3">
+                        Рассмотрено: <span th:text="${#temporals.format(c.resolvedAt, 'dd.MM.yyyy HH:mm')}"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
